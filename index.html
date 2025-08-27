@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browser Data Viewer</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+        }
+        h1 {
+            text-align: center;
+            color: #764ba2;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        .section {
+            background: #f8f9ff;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 5px solid #667eea;
+        }
+        .section h2 {
+            color: #764ba2;
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .icon {
+            font-size: 1.2em;
+        }
+        .data-item {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: 1px solid #e0e7ff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .data-label {
+            font-weight: bold;
+            color: #4c51bf;
+            margin-bottom: 5px;
+        }
+        .data-value {
+            background: #f7fafc;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            word-break: break-all;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #e2e8f0;
+        }
+        .empty {
+            color: #a0aec0;
+            font-style: italic;
+        }
+        .refresh-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 20px 10px 20px 0;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            border: 2px solid #e0e7ff;
+        }
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .stat-label {
+            color: #666;
+            margin-top: 5px;
+        }
+        .warning {
+            background: #fef5e7;
+            border-left-color: #f6ad55;
+            color: #744210;
+        }
+        .cookie-item {
+            background: white;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 6px;
+            border: 1px solid #e0e7ff;
+        }
+        .cookie-name {
+            font-weight: bold;
+            color: #2d3748;
+        }
+        .cookie-domain {
+            color: #4a5568;
+            font-size: 0.9em;
+        }
+        .cookie-value {
+            background: #f7fafc;
+            padding: 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            margin-top: 8px;
+            word-break: break-all;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🕵️ Browser Data Viewer</h1>
+        
+        <div style="text-align: center; margin-bottom: 30px;">
+            <button class="refresh-btn" onclick="loadAllData()">🔄 Refresh All Data</button>
+            <button class="refresh-btn" onclick="clearStorage()">🗑️ Clear Storage</button>
+        </div>
+
+        <div class="stats" id="stats"></div>
+
+        <div class="section">
+            <h2><span class="icon">🍪</span>Cookies</h2>
+            <div id="cookies"></div>
+        </div>
+
+        <div class="section">
+            <h2><span class="icon">💾</span>Local Storage</h2>
+            <div id="localStorage"></div>
+        </div>
+
+        <div class="section">
+            <h2><span class="icon">⏱️</span>Session Storage</h2>
+            <div id="sessionStorage"></div>
+        </div>
+
+        <div class="section">
+            <h2><span class="icon">🗂️</span>IndexedDB</h2>
+            <div id="indexedDB"></div>
+        </div>
+
+        <div class="section">
+            <h2><span class="icon">🌐</span>Cache Storage</h2>
+            <div id="cacheStorage"></div>
+        </div>
+
+        <div class="section">
+            <h2><span class="icon">👤</span>Browser Fingerprint</h2>
+            <div id="fingerprint"></div>
+        </div>
+
+        <div class="section">
+            <h2><span class="icon">🔐</span>Permissions & Features</h2>
+            <div id="permissions"></div>
+        </div>
+
+        <div class="section">
+            <h2><span class="icon">🌍</span>Network & Location</h2>
+            <div id="network"></div>
+        </div>
+
+        <div class="section warning">
+            <h2><span class="icon">⚠️</span>Privacy Notes</h2>
+            <p>This page shows data that websites can access about you. Some tracking methods are not visible here (like server-side tracking, canvas fingerprinting, or third-party trackers). Consider using privacy tools like ad blockers and clearing data regularly.</p>
+        </div>
+    </div>
+
+    <script>
+        function createDataItem(label, value, domain = null) {
+            const item = document.createElement('div');
+            item.className = 'data-item';
+            
+            const labelEl = document.createElement('div');
+            labelEl.className = 'data-label';
+            labelEl.textContent = label;
+            if (domain) {
+                labelEl.innerHTML += ` <span style="color: #718096; font-weight: normal;">(${domain})</span>`;
+            }
+            
+            const valueEl = document.createElement('div');
+            valueEl.className = 'data-value';
+            valueEl.textContent = value || 'Empty or undefined';
+            if (!value) valueEl.classList.add('empty');
+            
+            item.appendChild(labelEl);
+            item.appendChild(valueEl);
+            return item;
+        }
+
+        function createCookieItem(name, value, domain) {
+            const item = document.createElement('div');
+            item.className = 'cookie-item';
+            
+            item.innerHTML = `
+                <div class="cookie-name">${name}</div>
+                <div class="cookie-domain">${domain || 'Current domain'}</div>
+                <div class="cookie-value">${value}</div>
+            `;
+            
+            return item;
+        }
+
+        function updateStats() {
+            const cookies = document.cookie.split(';').filter(c => c.trim()).length;
+            const localItems = Object.keys(localStorage).length;
+            const sessionItems = Object.keys(sessionStorage).length;
+            
+            const statsContainer = document.getElementById('stats');
+            statsContainer.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-number">${cookies}</div>
+                    <div class="stat-label">Cookies</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${localItems}</div>
+                    <div class="stat-label">Local Storage Items</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${sessionItems}</div>
+                    <div class="stat-label">Session Items</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${(JSON.stringify(localStorage).length / 1024).toFixed(1)}KB</div>
+                    <div class="stat-label">Storage Size</div>
+                </div>
+            `;
+        }
+
+        function loadCookies() {
+            const container = document.getElementById('cookies');
+            container.innerHTML = '';
+            
+            if (!document.cookie) {
+                container.appendChild(createDataItem('No cookies found', ''));
+                return;
+            }
+            
+            const cookies = document.cookie.split(';');
+            cookies.forEach(cookie => {
+                const [name, ...valueParts] = cookie.trim().split('=');
+                const value = valueParts.join('=');
+                if (name) {
+                    container.appendChild(createCookieItem(name, value, window.location.hostname));
+                }
+            });
+        }
+
+        function loadLocalStorage() {
+            const container = document.getElementById('localStorage');
+            container.innerHTML = '';
+            
+            if (localStorage.length === 0) {
+                container.appendChild(createDataItem('No local storage data', ''));
+                return;
+            }
+            
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                const value = localStorage.getItem(key);
+                container.appendChild(createDataItem(key, value));
+            }
+        }
+
+        function loadSessionStorage() {
+            const container = document.getElementById('sessionStorage');
+            container.innerHTML = '';
+            
+            if (sessionStorage.length === 0) {
+                container.appendChild(createDataItem('No session storage data', ''));
+                return;
+            }
+            
+            for (let i = 0; i < sessionStorage.length; i++) {
+                const key = sessionStorage.key(i);
+                const value = sessionStorage.getItem(key);
+                container.appendChild(createDataItem(key, value));
+            }
+        }
+
+        async function loadIndexedDB() {
+            const container = document.getElementById('indexedDB');
+            container.innerHTML = '';
+            
+            try {
+                const databases = await indexedDB.databases();
+                if (databases.length === 0) {
+                    container.appendChild(createDataItem('No IndexedDB databases found', ''));
+                    return;
+                }
+                
+                databases.forEach(db => {
+                    container.appendChild(createDataItem(`Database: ${db.name}`, `Version: ${db.version}`));
+                });
+            } catch (error) {
+                container.appendChild(createDataItem('IndexedDB access error', error.message));
+            }
+        }
+
+        async function loadCacheStorage() {
+            const container = document.getElementById('cacheStorage');
+            container.innerHTML = '';
+            
+            try {
+                if ('caches' in window) {
+                    const cacheNames = await caches.keys();
+                    if (cacheNames.length === 0) {
+                        container.appendChild(createDataItem('No cache storage found', ''));
+                        return;
+                    }
+                    
+                    for (const cacheName of cacheNames) {
+                        const cache = await caches.open(cacheName);
+                        const requests = await cache.keys();
+                        container.appendChild(createDataItem(`Cache: ${cacheName}`, `${requests.length} cached items`));
+                    }
+                } else {
+                    container.appendChild(createDataItem('Cache Storage not supported', ''));
+                }
+            } catch (error) {
+                container.appendChild(createDataItem('Cache Storage access error', error.message));
+            }
+        }
+
+        function loadFingerprint() {
+            const container = document.getElementById('fingerprint');
+            container.innerHTML = '';
+            
+            const fingerprint = {
+                'User Agent': navigator.userAgent,
+                'Platform': navigator.platform,
+                'Language': navigator.language,
+                'Languages': navigator.languages?.join(', '),
+                'Cookie Enabled': navigator.cookieEnabled,
+                'Do Not Track': navigator.doNotTrack,
+                'Screen Resolution': `${screen.width}x${screen.height}`,
+                'Available Screen': `${screen.availWidth}x${screen.availHeight}`,
+                'Color Depth': `${screen.colorDepth} bits`,
+                'Pixel Depth': `${screen.pixelDepth} bits`,
+                'Timezone Offset': `${new Date().getTimezoneOffset()} minutes`,
+                'Timezone': Intl.DateTimeFormat().resolvedOptions().timeZone,
+                'WebGL Vendor': getWebGLInfo().vendor,
+                'WebGL Renderer': getWebGLInfo().renderer,
+                'CPU Cores': navigator.hardwareConcurrency,
+                'Memory (GB)': navigator.deviceMemory,
+                'Connection Type': navigator.connection?.effectiveType,
+                'Touch Support': navigator.maxTouchPoints > 0,
+                'PDF Viewer': navigator.pdfViewerEnabled,
+                'Storage Quota': 'Checking...'
+            };
+
+            // Check storage quota
+            if ('storage' in navigator && 'estimate' in navigator.storage) {
+                navigator.storage.estimate().then(estimate => {
+                    fingerprint['Storage Quota'] = `${(estimate.quota / 1024 / 1024 / 1024).toFixed(2)} GB available, ${(estimate.usage / 1024 / 1024).toFixed(2)} MB used`;
+                    updateFingerprintDisplay();
+                });
+            }
+
+            function updateFingerprintDisplay() {
+                container.innerHTML = '';
+                Object.entries(fingerprint).forEach(([key, value]) => {
+                    container.appendChild(createDataItem(key, value));
+                });
+            }
+
+            updateFingerprintDisplay();
+        }
+
+        function getWebGLInfo() {
+            try {
+                const canvas = document.createElement('canvas');
+                const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+                if (gl) {
+                    const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+                    return {
+                        vendor: debugInfo ? gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) : 'Unknown',
+                        renderer: debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : 'Unknown'
+                    };
+                }
+            } catch (e) {}
+            return { vendor: 'Not available', renderer: 'Not available' };
+        }
+
+        async function loadPermissions() {
+            const container = document.getElementById('permissions');
+            container.innerHTML = '';
+            
+            const permissions = [
+                'geolocation', 'notifications', 'camera', 'microphone', 
+                'persistent-storage', 'push', 'midi', 'background-sync'
+            ];
+            
+            const features = {
+                'Service Worker': 'serviceWorker' in navigator,
+                'WebRTC': !!(window.RTCPeerConnection || window.webkitRTCPeerConnection),
+                'Web Assembly': typeof WebAssembly === 'object',
+                'Local Storage': typeof Storage !== 'undefined',
+                'Session Storage': typeof sessionStorage !== 'undefined',
+                'IndexedDB': !!window.indexedDB,
+                'WebGL': !!getWebGLInfo().vendor,
+                'Canvas': !!document.createElement('canvas').getContext,
+                'Web Workers': typeof Worker !== 'undefined',
+                'Bluetooth': 'bluetooth' in navigator,
+                'USB': 'usb' in navigator,
+                'WebXR': 'xr' in navigator,
+                'Payment Request': 'PaymentRequest' in window,
+                'Web Share': 'share' in navigator,
+                'File System Access': 'showOpenFilePicker' in window,
+                'Web Locks': 'locks' in navigator,
+                'Scheduler': 'scheduler' in window
+            };
+            
+            // Check permissions
+            if (navigator.permissions) {
+                for (const permission of permissions) {
+                    try {
+                        const result = await navigator.permissions.query({ name: permission });
+                        container.appendChild(createDataItem(`Permission: ${permission}`, result.state));
+                    } catch (error) {
+                        container.appendChild(createDataItem(`Permission: ${permission}`, 'Not supported'));
+                    }
+                }
+            }
+            
+            // Add feature detection
+            Object.entries(features).forEach(([feature, supported]) => {
+                container.appendChild(createDataItem(`Feature: ${feature}`, supported ? 'Supported' : 'Not supported'));
+            });
+        }
+
+        async function loadNetworkInfo() {
+            const container = document.getElementById('network');
+            container.innerHTML = '';
+            
+            // Network information
+            if (navigator.connection) {
+                const conn = navigator.connection;
+                container.appendChild(createDataItem('Connection Type', conn.effectiveType));
+                container.appendChild(createDataItem('Downlink Speed', `${conn.downlink} Mbps`));
+                container.appendChild(createDataItem('RTT', `${conn.rtt} ms`));
+                container.appendChild(createDataItem('Data Saver', conn.saveData ? 'Enabled' : 'Disabled'));
+            }
+            
+            // Basic network info
+            container.appendChild(createDataItem('Online Status', navigator.onLine ? 'Online' : 'Offline'));
+            container.appendChild(createDataItem('Current URL', window.location.href));
+            container.appendChild(createDataItem('Referrer', document.referrer || 'Direct navigation'));
+            container.appendChild(createDataItem('Protocol', window.location.protocol));
+            container.appendChild(createDataItem('Host', window.location.host));
+            
+            // Try to get IP (through WebRTC)
+            try {
+                const pc = new RTCPeerConnection({iceServers: [{urls: 'stun:stun.l.google.com:19302'}]});
+                pc.createDataChannel('');
+                await pc.createOffer();
+                pc.onicecandidate = (e) => {
+                    if (e.candidate) {
+                        const ip = /([0-9]{1,3}\.){3}[0-9]{1,3}/.exec(e.candidate.candidate);
+                        if (ip) {
+                            container.appendChild(createDataItem('Local IP (WebRTC)', ip[0]));
+                            pc.close();
+                        }
+                    }
+                };
+                await pc.setLocalDescription(await pc.createOffer());
+            } catch (error) {
+                container.appendChild(createDataItem('Local IP', 'Not accessible'));
+            }
+        }
+
+        function clearStorage() {
+            if (confirm('This will clear ALL browser storage data on this domain. Continue?')) {
+                localStorage.clear();
+
+          // Clear cookies
+                document.cookie.split(";").forEach(cookie => {
+                    const eqPos = cookie.indexOf("=");
+                    const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+                    document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+                });
+                
+                // Clear caches
+                if ('caches' in window) {
+                    caches.keys().then(names => {
+                        names.forEach(name => caches.delete(name));
+                    });
+                }
+                
+                loadAllData();
+                alert('Storage cleared! Some data may persist until browser restart.');
+            }
+        }
+
+        async function loadAllData() {
+            updateStats();
+            loadCookies();
+            loadLocalStorage();
+            loadSessionStorage();
+            await loadIndexedDB();
+            await loadCacheStorage();
+            loadFingerprint();
+            await loadPermissions();
+            await loadNetworkInfo();
+        }
+
+        // Load data on page load
+        window.addEventListener('load', loadAllData);
+        
+        // Add some demo data if storage is empty
+        if (localStorage.length === 0) {
+            localStorage.setItem('demo-key', 'This is demo data created by the Browser Data Viewer');
+            localStorage.setItem('timestamp', new Date().toISOString());
+        }
+    </script>
+</body>
+</html>
